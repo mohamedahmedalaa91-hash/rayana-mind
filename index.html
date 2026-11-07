@@ -464,6 +464,11 @@ table.t{font-size:var(--t-sm)} table.t th{font:600 12.5px/1.4 var(--f-body);colo
 .nx-result b{font:700 14px/1.4 var(--f-display);letter-spacing:0}
 .nx-pop b{font:700 16px/1.4 var(--f-display)}
 @media (max-width:760px){.panel-h{flex-wrap:wrap}.view-h h1{font-size:25px}.kpi b{font-size:28px}.nx-node{font-size:12.5px}.nx-cap{font-size:14px}}
+.nx-btn.live-on,#live-btn.live-on{border-color:var(--gold)!important;color:#0A1430!important;background:var(--gold)!important;box-shadow:0 0 0 3px rgba(243,196,64,.22),0 0 22px rgba(243,196,64,.55)}
+.nx-btn .ldot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.55}
+.nx-btn.live-on .ldot{background:#0A1430;opacity:1;animation:micpulse 1.4s ease-in-out infinite}
+#live-tap{position:fixed;inset:auto 16px 96px 16px;margin:auto;max-width:420px;z-index:99;padding:14px 18px;border-radius:16px;border:1px solid rgba(243,196,64,.6);background:rgba(6,20,52,.95);color:var(--gold);font:600 14px var(--f-body);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+@media (prefers-reduced-motion:reduce){.nx-btn.live-on .ldot{animation:none}}
 </style>
 
 <div class="shell" id="shell">
@@ -500,6 +505,7 @@ table.t{font-size:var(--t-sm)} table.t th{font:600 12.5px/1.4 var(--f-body);colo
       <button type="submit" class="btn gold" id="send">ابعت</button>
       <button type="button" class="btn" id="stop" hidden>وقّف</button>
       <button type="button" class="mic" id="mic" aria-label="الاستماع بالصوت"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button type="button" class="btn sm" id="live-btn" aria-pressed="false">مباشر</button>
       <button type="button" class="btn sm" id="voice-toggle"></button>
       <span class="note" id="hint"></span>
     </div>
@@ -523,6 +529,7 @@ table.t{font-size:var(--t-sm)} table.t th{font:600 12.5px/1.4 var(--f-body);colo
     <div class="nx-result" id="nx-result"><div class="ic" id="nx-res-ic">✓</div><b id="nx-res-t">النظام جاهز</b><small id="nx-res-s"></small><button id="nx-res-go">التفاصيل</button></div>
     <div class="nx-cap" id="nx-cap" aria-live="polite"></div>
     <div class="nx-dock">
+      <button class="nx-btn" id="nx-live" aria-pressed="false"><span class="ldot"></span><span id="nx-live-t">محادثة مباشرة</span></button>
       <button class="nx-btn" id="nx-mic" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span id="nx-mic-t">كلّم ريّان</span></button>
       <button class="nx-btn" id="nx-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H9l-5 4z"/></svg>شات</button>
       <div class="nx-wave"><span id="nx-wave-t">مستعد</span></div>
@@ -1471,7 +1478,7 @@ function vadStart(stream){try{const AC=window.AudioContext||window.webkitAudioCo
  const tick=()=>{if(!MIC.on){ac.close();return;}an.getByteTimeDomainData(buf);let sum=0;for(const v of buf){const d=(v-128)/128;sum+=d*d;}const rms=Math.sqrt(sum/buf.length);AV.burst=Math.min(1,rms*8);
   const now=performance.now();if(rms>0.035){heard=true;quietSince=0;}else if(heard){if(!quietSince)quietSince=now;else if(now-quietSince>1400){micStop();return;}}
   if(now-t0>30000||(!heard&&now-t0>8000)){micStop();return;}requestAnimationFrame(tick);};requestAnimationFrame(tick);MIC.vad=ac;}catch(_){}}
-async function micStart(){if(MIC.busy)return;if(MIC.on){micStop();return;}stopSpeak();
+async function micStart(){if(MIC.busy)return;if(LIVE.on){liveSet(false);return;}if(MIC.on){micStop();return;}stopSpeak();
  if(EL.key()&&store.get("elNoStt","")!==EL.key().slice(-6)&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder){
   try{MIC.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}catch(e){micMsg(micDenied(e));return;}
   MIC.chunks=[];let r;try{r=new MediaRecorder(MIC.stream);}catch(e){micMsg(micDenied(e));MIC.stream.getTracks().forEach(t=>t.stop());return;}
@@ -1488,17 +1495,92 @@ async function micTranscribe(){const stream=MIC.stream;if(stream)stream.getTrack
  const type=(MIC.rec&&MIC.rec.mimeType)||"audio/webm";const blob=new Blob(MIC.chunks,{type});MIC.rec=null;
  if(blob.size<2000){setMode("idle");micMsg("ما سمعتش كلام، جرّب تاني.");micUI();return;}
  MIC.busy=true;micUI();setMode("thinking");micMsg("بكتب كلامك…");
- const ext=/mp4|m4a/.test(type)?"m4a":/ogg/.test(type)?"ogg":"webm";let text="",lastErr="";
- for(const model of ["scribe_v2","scribe_v1"]){const fd=new FormData();fd.append("file",blob,"speech."+ext);fd.append("model_id",model);fd.append("tag_audio_events","false");
-  let r;try{r=await fetch("https://api.elevenlabs.io/v1/speech-to-text",{method:"POST",headers:{"xi-api-key":EL.key()},body:fd});}catch(e){lastErr="ما قدرتش أوصل لـ ElevenLabs.";break;}
-  if(r.status===400||r.status===422){lastErr="";continue;}
-  if(!r.ok){lastErr=await elErr(r);if(/صلاحية/.test(lastErr)&&(window.SpeechRecognition||window.webkitSpeechRecognition)){store.set("elNoStt",EL.key().slice(-6));lastErr="مفتاحك مالوش صلاحية «تحويل الكلام لنص»، فحوّلت الاستماع لمحرّك المتصفح باللهجة المصرية. دوس المايك وقول كلامك تاني — وصوت ممدوح شغال عادي.";}break;}
-  try{const j=await r.json();text=String(j.text||"").trim();}catch(_){lastErr="رد ElevenLabs مش مفهوم.";}break;}
+ const ext=/mp4|m4a/.test(type)?"m4a":/ogg/.test(type)?"ogg":"webm";const {text,err:lastErr}=await sttEL(blob,ext);
  MIC.busy=false;micUI();if(AV.mode==="thinking")setMode("idle");
  if(!text){micMsg(lastErr||"ما فهمتش الكلام، جرّب تاني.");return;}
  $("#box").value=text;if(NX.on){const c=$("#nx-cap");if(c)c.textContent="«"+text+"»";}send(text);}
 $("#mic").onclick=()=>micStart();
 $("#nx-mic").onclick=()=>micStart();
+async function sttEL(blob,ext){let lastErr="";
+ for(const model of ["scribe_v2","scribe_v1"]){const fd=new FormData();fd.append("file",blob,"speech."+ext);fd.append("model_id",model);fd.append("tag_audio_events","false");
+  let r;try{r=await fetch("https://api.elevenlabs.io/v1/speech-to-text",{method:"POST",headers:{"xi-api-key":EL.key()},body:fd});}catch(e){return {text:"",err:"ما قدرتش أوصل لـ ElevenLabs."};}
+  if(r.status===400||r.status===422){lastErr="";continue;}
+  if(!r.ok){let e=await elErr(r);if(/صلاحية/.test(e)&&(window.SpeechRecognition||window.webkitSpeechRecognition)){store.set("elNoStt",EL.key().slice(-6));e="مفتاحك مالوش صلاحية «تحويل الكلام لنص»، فحوّلت الاستماع لمحرّك المتصفح باللهجة المصرية. قول كلامك تاني — وصوت ممدوح شغال عادي.";}return {text:"",err:e};}
+  try{const j=await r.json();return {text:String(j.text||"").trim(),err:""};}catch(_){return {text:"",err:"رد ElevenLabs مش مفهوم."};}}
+ return {text:"",err:lastErr||"ElevenLabs ما قبلش التسجيل."};}
+/* ===== LIVE: hands-free conversation — always listening, barge-in, auto-reply ===== */
+const LIVE_WIN=45000;/* after Rayyan speaks, no need to call his name for 45s */
+const WAKE=/ر\s?[يى]\s?ّ?\s?ا\s?ن|رايان|ريحان|rayan|rayyan/i;
+const LIVE={on:store.get("live",false),stream:null,ac:null,node:null,rate:48000,state:"off",floor:0,loud:0,quiet:0,voiced:0,len:0,buf:[],pre:[],preLen:0,follow:0,sr:null,srOn:false,useSR:false};
+const LW="class P extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(2048);this.n=0}process(i){const c=i[0]&&i[0][0];if(c){for(let k=0;k<c.length;k++){this.b[this.n++]=c[k];if(this.n===2048){this.port.postMessage(this.b.slice(0));this.n=0}}}return true}}registerProcessor('rm-live',P)";
+function liveUI(){const on=LIVE.on;["#nx-live","#live-btn"].forEach(s=>{const b=$(s);if(b){b.classList.toggle("live-on",on);b.setAttribute("aria-pressed",String(on));}});
+ const t=$("#nx-live-t");if(t)t.textContent=on?"مباشر · شغّال":"محادثة مباشرة";const lb=$("#live-btn");if(lb)lb.textContent=on?"مباشر ●":"مباشر";}
+function liveCap(m){if(NX.on){const c=$("#nx-cap");if(c)c.textContent=m;}const h=$("#hint");if(h)h.textContent=m;}
+function liveSTTmode(){return !(EL.key()&&store.get("elNoStt","")!==EL.key().slice(-6));}
+async function liveSet(on){LIVE.on=on;store.set("live",on);liveUI();if(on){if(MIC.on)micStop();const ok=await liveStart();if(ok){LIVE.follow=performance.now()+LIVE_WIN;liveCap("أنا سامعك على طول — اتكلم براحتك، ولو سكتّ شوية ناديني «يا ريّان».");}}else{liveStop();liveCap("وقفت الاستماع المباشر.");}}
+async function liveStart(){if(LIVE.stream)return true;
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){liveCap("المتصفح ده مش بيدعم الاستماع المستمر. افتح ريّان من Chrome.");LIVE.on=false;store.set("live",false);liveUI();return false;}
+ try{LIVE.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
+ catch(e){liveCap(micDenied(e));LIVE.on=false;store.set("live",false);liveUI();return false;}
+ const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();LIVE.ac=ac;LIVE.rate=ac.sampleRate;
+ const src=ac.createMediaStreamSource(LIVE.stream);let node;
+ try{const url=URL.createObjectURL(new Blob([LW],{type:"application/javascript"}));await ac.audioWorklet.addModule(url);node=new AudioWorkletNode(ac,"rm-live");node.port.onmessage=e=>liveFrame(e.data);}
+ catch(_){node=ac.createScriptProcessor(2048,1,1);node.onaudioprocess=e=>liveFrame(e.inputBuffer.getChannelData(0).slice(0));}
+ const mute=ac.createGain();mute.gain.value=0;src.connect(node);node.connect(mute);mute.connect(ac.destination);LIVE.node=node;
+ if(ac.state!=="running"){try{await ac.resume();}catch(_){}}
+ if(ac.state!=="running")liveNeedTap();
+ LIVE.useSR=liveSTTmode();LIVE.state="listen";LIVE.floor=0;LIVE.pre=[];LIVE.preLen=0;return true;}
+function liveStop(){LIVE.state="off";try{LIVE.sr&&LIVE.sr.abort();}catch(_){}LIVE.sr=null;LIVE.srOn=false;
+ if(LIVE.stream)LIVE.stream.getTracks().forEach(t=>t.stop());LIVE.stream=null;try{LIVE.ac&&LIVE.ac.close();}catch(_){}LIVE.ac=null;LIVE.node=null;LIVE.buf=[];if(AV.mode==="listening")setMode("idle");}
+function liveNeedTap(){if($("#live-tap"))return;const d=document.createElement("button");d.id="live-tap";d.type="button";d.textContent="المس الشاشة مرة واحدة عشان ريّان يبدأ يسمعك ويتكلم";document.body.appendChild(d);
+ const go=async()=>{document.removeEventListener("pointerdown",go,true);document.removeEventListener("keydown",go,true);d.remove();try{LIVE.ac&&await LIVE.ac.resume();}catch(_){}};
+ document.addEventListener("pointerdown",go,true);document.addEventListener("keydown",go,true);}
+function liveSpeaking(){return AV.mode==="speaking"||performance.now()<AV.speakUntil||!!(EL.audio&&!EL.audio.paused);}
+function liveFrame(f){if(!LIVE.on||LIVE.state==="off")return;
+ let s=0;for(let i=0;i<f.length;i++)s+=f[i]*f[i];const rms=Math.sqrt(s/f.length),ms=f.length/LIVE.rate*1000,now=performance.now();
+ const spk=liveSpeaking();if(spk)LIVE.follow=Math.max(LIVE.follow,now+LIVE_WIN);
+ if(LIVE.state==="cap"){LIVE.buf.push(f);LIVE.len+=ms;AV.burst=Math.min(1,rms*8);
+  if(rms>LIVE.thr*0.6){LIVE.quiet=0;LIVE.voiced+=ms;}else LIVE.quiet+=ms;
+  if(LIVE.quiet>900||LIVE.len>30000)liveEnd();return;}
+ LIVE.pre.push(f);LIVE.preLen+=ms;while(LIVE.preLen>450&&LIVE.pre.length>1){const x=LIVE.pre.shift();LIVE.preLen-=x.length/LIVE.rate*1000;}
+ if(!spk&&LIVE.state==="listen")LIVE.floor=LIVE.floor?(rms<LIVE.floor*2.5?LIVE.floor*0.98+rms*0.02:LIVE.floor*0.999+rms*0.001):rms;
+ const thr=Math.max(0.016,LIVE.floor*3.2);LIVE.thr=thr;
+ if(spk){/* barge-in: you talk over Rayyan → he stops and listens */
+  if(rms>Math.max(0.05,LIVE.floor*6)){LIVE.loud+=ms;if(LIVE.loud>300){LIVE.loud=0;stopSpeak();if(LIVE.useSR){liveSRAbort();}else liveCapture();}}else LIVE.loud=Math.max(0,LIVE.loud-ms);
+  if(LIVE.useSR&&LIVE.srOn)liveSRAbort();return;}
+ if(LIVE.state!=="listen"||busy||MIC.busy||MIC.on||AV.mode==="thinking"){LIVE.loud=0;if(LIVE.useSR&&LIVE.srOn&&busy)liveSRAbort();return;}
+ if(LIVE.useSR){if(!LIVE.srOn)liveSRStart();return;}
+ if(rms>thr){LIVE.loud+=ms;if(LIVE.loud>150){LIVE.loud=0;liveCapture();}}else LIVE.loud=Math.max(0,LIVE.loud-ms/2);}
+function liveCapture(){LIVE.state="cap";LIVE.buf=LIVE.pre.slice();LIVE.len=LIVE.preLen;LIVE.quiet=0;LIVE.voiced=0;setMode("listening");liveCap("بسمعك…");}
+function liveWav(frames,rate){let n=0;for(const f of frames)n+=f.length;const r=rate/16000,m=Math.floor(n/r);const all=new Float32Array(n);let o=0;for(const f of frames){all.set(f,o);o+=f.length;}
+ const b=new ArrayBuffer(44+m*2),d=new DataView(b),w=(p,t)=>{for(let i=0;i<t.length;i++)d.setUint8(p+i,t.charCodeAt(i));};
+ w(0,"RIFF");d.setUint32(4,36+m*2,true);w(8,"WAVE");w(12,"fmt ");d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);d.setUint32(24,16000,true);d.setUint32(28,32000,true);d.setUint16(32,2,true);d.setUint16(34,16,true);w(36,"data");d.setUint32(40,m*2,true);
+ for(let i=0;i<m;i++){const a=Math.floor(i*r),z=Math.min(n,Math.floor((i+1)*r));let acc=0;for(let k=a;k<z;k++)acc+=all[k];const v=Math.max(-1,Math.min(1,acc/Math.max(1,z-a)));d.setInt16(44+i*2,v*0x7fff,true);}
+ return new Blob([b],{type:"audio/wav"});}
+async function liveEnd(){const frames=LIVE.buf;LIVE.buf=[];LIVE.pre=[];LIVE.preLen=0;
+ if(LIVE.voiced<350){LIVE.state="listen";if(AV.mode==="listening")setMode("idle");return;}
+ LIVE.state="stt";setMode("thinking");liveCap("بكتب كلامك…");
+ const {text,err}=await sttEL(liveWav(frames,LIVE.rate),"wav");
+ LIVE.state=LIVE.on?"listen":"off";if(AV.mode==="thinking"&&!busy)setMode("idle");
+ if(err){liveCap(err);if(liveSTTmode())LIVE.useSR=true;return;}
+ liveHeard(text);}
+function liveHeard(t){t=String(t||"").replace(/\s+/g," ").trim();if(t.replace(/[^\p{L}]/gu,"").length<2)return;
+ if(/^(اسكت|بس|خلاص|استنى|وقف|كفاية)[\s.!؟]*$/.test(t)){stopSpeak();return;}
+ const now=performance.now(),called=WAKE.test(t);
+ if(!called&&now>LIVE.follow){liveCap("سامعك… ناديني «يا ريّان» لما تحتاجني.");return;}
+ LIVE.follow=now+LIVE_WIN;$("#box").value=t;if(NX.on){const c=$("#nx-cap");if(c)c.textContent="«"+t+"»";}send(t);}
+function liveSRStart(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){liveCap("الاستماع المستمر محتاج Chrome أو مفتاح ElevenLabs.");return;}
+ const sr=new SR();sr.lang="ar-EG";sr.continuous=true;sr.interimResults=true;LIVE.sr=sr;LIVE.srOn=true;
+ sr.onresult=e=>{let fin="",tmp="";for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=x;else tmp+=x;}
+  if(tmp&&NX.on){const c=$("#nx-cap");if(c)c.textContent=tmp;if(AV.mode==="idle")setMode("listening");}
+  if(fin.trim()){try{sr.abort();}catch(_){}liveHeard(fin);}};
+ sr.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"){liveCap(micDenied(e));liveSet(false);}};
+ sr.onend=()=>{if(LIVE.sr===sr){LIVE.sr=null;LIVE.srOn=false;}if(AV.mode==="listening"&&!busy)setMode("idle");};
+ try{sr.start();}catch(_){LIVE.srOn=false;}}
+function liveSRAbort(){try{LIVE.sr&&LIVE.sr.abort();}catch(_){}LIVE.sr=null;LIVE.srOn=false;}
+$("#nx-live").onclick=()=>liveSet(!LIVE.on);
+if($("#live-btn"))$("#live-btn").onclick=()=>liveSet(!LIVE.on);
+liveUI();if(LIVE.on&&STANDALONE)setTimeout(()=>liveStart().then(ok=>{if(ok)LIVE.follow=performance.now()+LIVE_WIN;}),600);
 $("#voice-toggle").onclick=()=>{if(!V.on&&!isEgyptian(pickVoice())&&pickVoice()){$("#hint").textContent="مفيش صوت مصري على جهازك؛ الصوت المتاح هينطق بلهجة تانية.";}
  if(!pickVoice()){$("#hint").textContent="الصوت محتاج مفتاح ElevenLabs من الإعدادات.";location.hash="#config";return;}V.on=!V.on;store.set("voiceOn",V.on);if(!V.on)stopSpeak();drawVoiceToggle();drawSys();};
 function openChat(){$("#chatbox").hidden=false;$("#dock").hidden=true;drawChat();}
