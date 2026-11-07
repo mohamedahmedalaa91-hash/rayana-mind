@@ -717,7 +717,7 @@ async function elErr(r){let d={};try{const j=await r.json();d=(j&&j.detail)||j||
   return "مفتاح ElevenLabs غلط؛ انسخه تاني كامل من ElevenLabs وحطه في الإعدادات.";}
  if(r.status===429)return "ElevenLabs مشغول أو الرصيد خلص، جرّب بعد شوية.";
  return "ElevenLabs رجّع خطأ "+r.status+(m?": "+m.slice(0,100):"")+".";}
-const EL={key:()=>store.get("el",""),voice:()=>store.get("elv","68MRVrnQAt8vLbu0FCzw"),audio:null,al:null,ctl:null,err:""};
+store.set("elNoStt","");const EL={key:()=>store.get("el",""),voice:()=>store.get("elv","68MRVrnQAt8vLbu0FCzw"),audio:null,al:null,ctl:null,err:""};
 const EL_VOICE={name:"ممدوح · ElevenLabs",lang:"ar-EG",voiceURI:"elevenlabs",el:true};
 const V={on:store.get("voiceOn",null),uri:store.get("voiceUri",""),rate:store.get("rate",1),voices:[],egypt:[]};
 function loadVoices(){try{const all=(window.speechSynthesis&&speechSynthesis.getVoices())||[];
@@ -1133,7 +1133,7 @@ views.config={mount(el){el.innerHTML=header("SETTINGS & INTEGRATIONS","الإع�
   $("#vsel").onchange=e=>{V.uri=e.target.value;store.set("voiceUri",V.uri);drawVoiceToggle();views.config.update();};
   $("#vrate").oninput=e=>{V.rate=+e.target.value;store.set("rate",V.rate);};
   $("#von").onclick=()=>{V.on=!V.on;store.set("voiceOn",V.on);drawVoiceToggle();views.config.update();};
-  $("#el-save").onclick=()=>{const k=$("#el-key").value.trim();if(!k&&!EL.key())return;if(k){store.set("el",k);store.set("elNoStt","");}V.on=true;store.set("voiceOn",true);EL.err="";drawVoiceToggle();drawSys();views.config.update();speak("تمام يا باشمهندس، صوتي شغال دلوقتي. أنا ريّان، معاك في أي وقت.");};
+  $("#el-save").onclick=()=>{const k=$("#el-key").value.trim();if(!k&&!EL.key())return;if(k)store.set("el",k);store.set("elNoStt","");V.on=true;store.set("voiceOn",true);EL.err="";drawVoiceToggle();drawSys();views.config.update();speak("تمام يا باشمهندس، صوتي شغال دلوقتي. أنا ريّان، معاك في أي وقت.");};
   if($("#el-clear"))$("#el-clear").onclick=()=>{stopSpeak();store.set("el","");drawVoiceToggle();drawSys();views.config.update();};
   $("#vtest").onclick=()=>speak("أهلًا يا باشمهندس. أنا ريّان، معاك في متابعة الشغل. قولّي نبدأ بإيه النهارده؟");
   $("#relaunch").onclick=()=>{location.hash="#core";setTimeout(nxBoot,50);};
