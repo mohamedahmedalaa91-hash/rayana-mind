@@ -1,6 +1,6 @@
 <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#030A1C"><meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#020712"><meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ريانة">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -60,7 +60,7 @@ window.claude={use:function(n){if(n==="db")return Promise.resolve(db);if(n==="sa
 <style>
 /* NEXUS HQ for Rayana — executive command center. Nav rail (right) · command surface · intelligence panel (left) · floating hologram assistant. Single deliberate dark world: obsidian base, Rayana gold for decisions, holo cyan only for the assistant. */
 :root{
-  --bg:#030A1C; --surface:#0A1A3D; --surface-2:#0F2350; --glass:rgba(12,30,70,.72);
+  --bg:#020712; --surface:#0A1A3D; --surface-2:#0F2350; --glass:rgba(12,30,70,.72);
   --line:#173064; --line-2:#22417E; --edge:rgba(255,255,255,.06);
   --text:#EAF3FF; --text-2:#9DB4D8; --text-3:#6E86AE;
   --gold:#F3C440; --gold-ink:#15120A;
@@ -78,7 +78,7 @@ window.claude={use:function(n){if(n==="db")return Promise.resolve(db);if(n==="sa
 [hidden]{display:none!important}
 html,body{height:100%;background:var(--bg);color:var(--text)}
 body{font-family:var(--f-body);font-size:15px;line-height:1.55;
-  background-image:radial-gradient(1200px 700px at 60% -10%,rgba(46,139,255,.13),transparent 60%),radial-gradient(900px 500px at 10% 110%,rgba(243,196,64,.06),transparent 60%);}
+  background-image:radial-gradient(1200px 700px at 60% -10%,rgba(46,139,255,.07),transparent 60%),radial-gradient(900px 500px at 10% 110%,rgba(243,196,64,.06),transparent 60%);}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -209,7 +209,7 @@ table.t td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .iconbtn{border:none;background:none;color:var(--text-2);padding:6px;border-radius:8px}
 .iconbtn:hover{color:var(--text);background:var(--surface-2)}
 /* immersive + launch */
-.stage{position:fixed;inset:0;z-index:70;background:radial-gradient(ellipse at 50% 35%,#081F4A 0%,#030A1C 60%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;direction:rtl;
+.stage{position:fixed;inset:0;z-index:70;background:radial-gradient(ellipse at 50% 35%,#051433 0%,#020712 60%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;direction:rtl;
   padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transition:opacity .7s var(--ease),transform .7s var(--ease)}
 .stage.leaving{opacity:0;transform:scale(.96);pointer-events:none}
 .stage canvas.bgfx{position:absolute;inset:0;width:100%;height:100%}
@@ -247,7 +247,7 @@ table.t td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 /* ===== NEXUS constellation (home): blue field, gold core = Rayyan, agents as nodes ===== */
 body.on-core .dock{display:none}
 .nexus{position:fixed;inset:0;z-index:38;overflow:hidden;direction:ltr;color:#EAF4FF;
-  background:radial-gradient(ellipse 75% 65% at var(--nx-cx,50%) 47%,#0C3C86 0%,#082C6C 26%,#061F50 50%,#041235 76%,#020A1F 100%)}
+  background:radial-gradient(ellipse 75% 65% at var(--nx-cx,50%) 47%,#072656 0%,#051B44 26%,#041332 50%,#020B21 76%,#010612 100%)}
 .nx-cv{position:absolute;inset:0;display:block}
 .nx-layer{position:absolute;inset:0;pointer-events:none}
 .nx-layer>*{pointer-events:auto}
@@ -334,7 +334,7 @@ body.on-core .dock{display:none}
    Blueprint sheet (cyanotype ink + drafting grid), brass for decisions and for Rayyan's voice,
    signal blue only for live activity. Alexandria (display/numbers) + IBM Plex Sans Arabic (text & commands). */
 :root{
-  --bg:#040C22; --surface:#0C1F4A; --surface-2:#12295C; --sheet:rgba(11,29,70,.92);
+  --bg:#030818; --surface:#0C1F4A; --surface-2:#12295C; --sheet:rgba(11,29,70,.92);
   --line:#1C3670; --line-2:#2A4C8C; --hair:rgba(150,190,255,.14);
   --text:#EEF3FF; --text-2:#A9BCDD; --text-3:#7D93BA;
   --gold:#F3C440; --gold-hi:#FFD660; --gold-ink:#1B1503; --holo:#6FD3FF; --think:#A68BFF;
@@ -343,7 +343,7 @@ body.on-core .dock{display:none}
   --t-xs:12px; --t-sm:13.5px; --t-md:15px; --t-lg:18px; --t-xl:23px; --t-2xl:30px;
 }
 body{font-size:var(--t-md);line-height:1.7;font-feature-settings:"kern";-webkit-font-smoothing:antialiased;background-color:var(--bg);
-  background-image:radial-gradient(1100px 640px at 62% -10%,rgba(52,120,255,.12),transparent 62%),
+  background-image:radial-gradient(1100px 640px at 62% -10%,rgba(52,120,255,.07),transparent 62%),
     linear-gradient(rgba(150,190,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(150,190,255,.045) 1px,transparent 1px),
     linear-gradient(rgba(150,190,255,.075) 1px,transparent 1px),linear-gradient(90deg,rgba(150,190,255,.075) 1px,transparent 1px);
   background-size:auto,24px 24px,24px 24px,120px 120px,120px 120px;background-attachment:fixed}
@@ -1234,12 +1234,12 @@ function nxFrame(){if(!NX.on){NX.raf=0;return;}const ctx=NX.ctx,d=NX.dpr,W=NX.W,
  ctx.globalCompositeOperation="lighter";
  // flowing light fibers
  NX.fib.forEach(f=>{const o=RM?0:Math.sin(t*f.sp+f.ph)*34;ctx.beginPath();ctx.moveTo(-40,f.y0);ctx.bezierCurveTo(f.c1x,f.c1y+o,f.c2x,f.c2y-o,W+40,f.y3);
-  ctx.strokeStyle=`rgba(70,160,255,${(f.a*0.45*kf).toFixed(3)})`;ctx.lineWidth=f.w*3.2;ctx.stroke();ctx.strokeStyle=`rgba(120,200,255,${(f.a*kf).toFixed(3)})`;ctx.lineWidth=f.w;ctx.stroke();});
+  ctx.strokeStyle=`rgba(70,160,255,${(f.a*0.22*kf).toFixed(3)})`;ctx.lineWidth=f.w*3.2;ctx.stroke();ctx.strokeStyle=`rgba(120,200,255,${(f.a*0.55*kf).toFixed(3)})`;ctx.lineWidth=f.w;ctx.stroke();});
  // circuit traces from agents to the edges
- ctx.lineWidth=1.3;NX.tr.forEach((pts,i)=>{const a=(.42*ease((t-1.1-i*.05)/.8));if(a<=0)return;ctx.strokeStyle=`rgba(95,200,255,${a})`;ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let k=1;k<pts.length;k++)ctx.lineTo(pts[k][0],pts[k][1]);ctx.stroke();
+ ctx.lineWidth=1.3;NX.tr.forEach((pts,i)=>{const a=(.26*ease((t-1.1-i*.05)/.8));if(a<=0)return;ctx.strokeStyle=`rgba(95,200,255,${a})`;ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let k=1;k<pts.length;k++)ctx.lineTo(pts[k][0],pts[k][1]);ctx.stroke();
   const e=pts[pts.length-1];ctx.fillStyle=`rgba(120,220,255,${a*1.6})`;ctx.beginPath();ctx.arc(e[0],e[1],2.6,0,7);ctx.fill();});
  // spokes agent -> core, with packets for agents that have live tasks
- const live=liveTasks();NX.lay.forEach((p,i)=>{const a=.30*ease((t-1.0-i*.06)/.7);if(a<=0)return;const dx=NX.cx-p.x,dy=NX.cy-p.y,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L;
+ const live=liveTasks();NX.lay.forEach((p,i)=>{const a=.20*ease((t-1.0-i*.06)/.7);if(a<=0)return;const dx=NX.cx-p.x,dy=NX.cy-p.y,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L;
   const x0=p.x+ux*14,y0=p.y+uy*14,x1=NX.cx-ux*NX.R*1.05,y1=NX.cy-uy*NX.R*1.05;ctx.strokeStyle=`rgba(110,200,255,${a})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
   if(!RM&&live.some(x=>x.agent===p.id)){const k=((t*.35+i*.13)%1);ctx.fillStyle="rgba(255,214,90,.95)";ctx.beginPath();ctx.arc(x0+(x1-x0)*k,y0+(y1-y0)*k,2.4,0,7);ctx.fill();}});
  NX.ints.forEach(it=>{const a=.22*kf;ctx.setLineDash([3,6]);ctx.strokeStyle=`rgba(134,194,255,${a})`;ctx.beginPath();ctx.moveTo(it.x,it.y);ctx.lineTo(NX.cx+(it.x-NX.cx)*.45,NX.cy+(it.y-NX.cy)*.45);ctx.stroke();ctx.setLineDash([]);});
@@ -1251,7 +1251,7 @@ function nxFrame(){if(!NX.on){NX.raf=0;return;}const ctx=NX.ctx,d=NX.dpr,W=NX.W,
  NX.raf=requestAnimationFrame(nxFrame);}
 function nxCore(ctx,t,k){const cx=NX.cx,cy=NX.cy,R=NX.R*(0.35+0.65*ease(k));const sp=AV.mode==="speaking"||performance.now()<AV.speakUntil;
  const pulse=1+(sp?AV.mouth*0.07:0.012*Math.sin(t*2.2));
- let g=ctx.createRadialGradient(cx,cy,R*0.3,cx,cy,R*2.6);g.addColorStop(0,"rgba(110,200,255,.30)");g.addColorStop(1,"rgba(110,200,255,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R*2.6,0,7);ctx.fill();
+ let g=ctx.createRadialGradient(cx,cy,R*0.3,cx,cy,R*2.6);g.addColorStop(0,"rgba(110,200,255,.18)");g.addColorStop(1,"rgba(110,200,255,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R*2.6,0,7);ctx.fill();
  ctx.strokeStyle="rgba(150,215,255,.30)";ctx.lineWidth=1;[1.3,1.55].forEach(f=>{ctx.beginPath();ctx.arc(cx,cy,R*f,0,7);ctx.stroke();});
  ctx.setLineDash([2,9]);ctx.lineDashOffset=RM?0:-t*18;ctx.strokeStyle="rgba(150,215,255,.45)";ctx.beginPath();ctx.arc(cx,cy,R*1.42,0,7);ctx.stroke();ctx.setLineDash([]);
  g=ctx.createRadialGradient(cx,cy,0,cx,cy,R);g.addColorStop(0,"rgba(130,210,255,.42)");g.addColorStop(.75,"rgba(40,120,230,.22)");g.addColorStop(1,"rgba(243,196,64,.22)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
