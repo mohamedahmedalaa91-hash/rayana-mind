@@ -708,6 +708,15 @@ function loop(){const t=(performance.now()-t0)/1000;
 
 /* ================= voice (TTS) ================= */
 /* ElevenLabs voice (Mamdoh, chosen by Mohamed): real Egyptian speech with per-character timing for lip sync */
+async function elErr(r){let d={};try{const j=await r.json();d=(j&&j.detail)||j||{};if(typeof d==="string")d={message:d};}catch(_){}
+ const s=String(d.status||d.code||""),m=String(d.message||"");
+ if(r.status===401||r.status===403){
+  if(/permission/i.test(s+m)){const p=/speech_to_text/i.test(m)?"«تحويل الكلام لنص»":/text_to_speech/i.test(m)?"«تحويل النص لكلام»":"المطلوبة";return "مفتاح ElevenLabs سليم بس ناقصه صلاحية "+p+"؛ فعّلها من صفحة المفاتيح في ElevenLabs.";}
+  if(/quota/i.test(s+m))return "رصيد ElevenLabs خلص؛ اشحن الرصيد أو استنى تجديد الشهر.";
+  if(/unusual|abuse|free_tier/i.test(s+m))return "ElevenLabs قفل الحساب المجاني مؤقتًا (نشاط غير معتاد أو VPN)؛ اقفل الـVPN أو اشترك في باقة مدفوعة.";
+  return "مفتاح ElevenLabs غلط؛ انسخه تاني كامل من ElevenLabs وحطه في الإعدادات.";}
+ if(r.status===429)return "ElevenLabs مشغول أو الرصيد خلص، جرّب بعد شوية.";
+ return "ElevenLabs رجّع خطأ "+r.status+(m?": "+m.slice(0,100):"")+".";}
 const EL={key:()=>store.get("el",""),voice:()=>store.get("elv","68MRVrnQAt8vLbu0FCzw"),audio:null,al:null,ctl:null,err:""};
 const EL_VOICE={name:"ممدوح · ElevenLabs",lang:"ar-EG",voiceURI:"elevenlabs",el:true};
 const V={on:store.get("voiceOn",null),uri:store.get("voiceUri",""),rate:store.get("rate",1),voices:[],egypt:[]};
@@ -737,7 +746,7 @@ async function elSpeak(txt,dur){if(EL.ctl)EL.ctl.abort();if(EL.audio){EL.audio.p
   try{r=await fetch("https://api.elevenlabs.io/v1/text-to-speech/"+EL.voice()+"/with-timestamps",{method:"POST",signal:ctl.signal,headers:{"xi-api-key":EL.key(),"content-type":"application/json","accept":"application/json"},body:JSON.stringify({text:txt,model_id:model})});}
   catch(e){if(e&&e.name==="AbortError")return false;elNote("ما قدرتش أوصل لـ ElevenLabs من الصفحة دي؛ الصوت شغال من النسخة المحمّلة على جهازك.");silentSpeak(txt,dur);return false;}
   if(r.status===400||r.status===422)continue;
-  if(!r.ok){elNote(r.status===401?"مفتاح ElevenLabs غلط أو منتهي؛ غيّره من الإعدادات.":r.status===429?"ElevenLabs مشغول أو الرصيد خلص، جرّب بعد شوية.":"ElevenLabs رجّع خطأ "+r.status+".");silentSpeak(txt,dur);return false;}
+  if(!r.ok){elNote(await elErr(r));silentSpeak(txt,dur);return false;}
   let j;try{j=await r.json();}catch(_){elNote("رد ElevenLabs مش مفهوم.");silentSpeak(txt,dur);return false;}
   if(ctl.signal.aborted)return false;
   const bin=atob(j.audio_base64||"");const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
@@ -1483,7 +1492,7 @@ async function micTranscribe(){const stream=MIC.stream;if(stream)stream.getTrack
  for(const model of ["scribe_v2","scribe_v1"]){const fd=new FormData();fd.append("file",blob,"speech."+ext);fd.append("model_id",model);fd.append("tag_audio_events","false");
   let r;try{r=await fetch("https://api.elevenlabs.io/v1/speech-to-text",{method:"POST",headers:{"xi-api-key":EL.key()},body:fd});}catch(e){lastErr="ما قدرتش أوصل لـ ElevenLabs.";break;}
   if(r.status===400||r.status===422){lastErr="";continue;}
-  if(!r.ok){lastErr=r.status===401?"مفتاح ElevenLabs غلط أو منتهي.":r.status===429?"ElevenLabs مشغول أو الرصيد خلص.":"ElevenLabs رجّع خطأ "+r.status+".";break;}
+  if(!r.ok){lastErr=await elErr(r);break;}
   try{const j=await r.json();text=String(j.text||"").trim();}catch(_){lastErr="رد ElevenLabs مش مفهوم.";}break;}
  MIC.busy=false;micUI();if(AV.mode==="thinking")setMode("idle");
  if(!text){micMsg(lastErr||"ما فهمتش الكلام، جرّب تاني.");return;}
