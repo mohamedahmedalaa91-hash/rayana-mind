@@ -469,6 +469,7 @@ table.t{font-size:var(--t-sm)} table.t th{font:600 12.5px/1.4 var(--f-body);colo
 .nx-btn.live-on .ldot{background:#0A1430;opacity:1;animation:micpulse 1.4s ease-in-out infinite}
 #live-tap{position:fixed;inset:auto 16px 96px 16px;margin:auto;max-width:420px;z-index:99;padding:14px 18px;border-radius:16px;border:1px solid rgba(243,196,64,.6);background:rgba(6,20,52,.95);color:var(--gold);font:600 14px var(--f-body);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 @media (prefers-reduced-motion:reduce){.nx-btn.live-on .ldot{animation:none}}
+.gnote{margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(111,211,255,.07);border:1px solid rgba(111,211,255,.22);font-size:13px;line-height:1.7}
 </style>
 
 <div class="shell" id="shell">
@@ -892,7 +893,7 @@ function dataDigest(max){
  const L=x=>String(x||"").slice(0,180);
  const tasks=S.tasks.map(t=>`- [${t.status}/${t.approval}] ${L(t.title)} → ${(AGENT[t.agent]||{}).name||t.agent}${t.project?" · "+t.project:""}${t.due?" · حتى "+t.due:""}${t.closedAt?" · أُغلقت "+t.closedAt.slice(0,10):""}`).join("\n");
  const dec=S.decisions.slice(-15).map(d=>`- ${d.verdict}: ${L(d.title)} (${String(d.at).slice(0,10)})`).join("\n");
- const gaps=S.gaps.filter(g=>!g.answered).map(g=>`- [أولوية ${g.prio}] ${L(g.q)}`).join("\n");
+ const gaps=S.gaps.filter(g=>!g.answered).map(g=>`- [أولوية ${g.prio}] ${L(g.q)}${g.note?" — المتاح: "+L(g.note):""}`).join("\n");
  const kb=S.kb.filter(k=>["finance","project","rule","contractor"].includes(k.type)).map(k=>`- [${KB_TYPES[k.type]}] ${k.title} (${k.updated||""}): ${L(k.summary)}${k.figures?" | "+L(k.figures):""}`).join("\n");
  const mets=METRICS.map(([k,n])=>{const m=metricOf(k);return `- ${n}: ${m?`${m.value} [${DATA_KIND[m.kind]||m.kind}${m.asOf?" · "+m.asOf:""} · ${m.source||""}]`:"غير متاح"}`;}).join("\n");
  return (`المؤشرات (بنوعها وتاريخها):\n${mets}\n\nالمهام:\n${tasks||"لا يوجد"}\n\nالقرارات الأخيرة:\n${dec||"لا يوجد"}\n\nأسئلة ناقصة:\n${gaps||"لا يوجد"}\n\nالذاكرة:\n${kb}`).slice(0,max||30000);}
@@ -966,7 +967,7 @@ views.knowledge={mount(el){el.innerHTML=header("KNOWLEDGE & DOCUMENTS","الذا
  update(){$("#kbtabs").innerHTML=[["kb","الذاكرة ("+S.kb.length+")"],["gaps","الناقص ("+S.gaps.filter(g=>!g.answered).length+")"]].map(([k,n])=>`<button class="chip" data-kbtab="${k}" aria-pressed="${S.kbTab===k}">${n}</button>`).join("");
   const list=$("#kblist");
   if(S.kbTab==="gaps"){$("#kbtypes").innerHTML="";const G=S.gaps.slice().sort((a,b)=>(a.answered?1:0)-(b.answered?1:0)||(a.prio||9)-(b.prio||9));
-   list.innerHTML=loadingOr(G.map(g=>{const d=DEPT[g.dept]||{};return `<div class="card ${g.answered?"green":(g.prio<=1?"red":"yellow")}"><div class="meta"><span class="pill" style="color:${d.hex||"inherit"}">${esc(d.name||"عام")}</span>${g.answered?`<span class="pill green">اتجاوب</span>`:`<span class="pill ${g.prio<=1?"red":"yellow"}">${g.prio<=1?"أولوية قصوى":"مهم"}</span>`}</div><b style="margin-top:6px">${esc(g.q)}</b>${g.why?`<p>${esc(g.why)}</p>`:""}${g.answered?`<p>الإجابة: ${esc(g.answer||"")}</p>`:`<div class="row mt"><button class="btn sm gold" data-gap="${g.id}">جاوب لريّان</button></div>`}</div>`;}).join("")||`<div class="empty">مفيش أسئلة ناقصة</div>`);return;}
+   list.innerHTML=loadingOr(G.map(g=>{const d=DEPT[g.dept]||{};return `<div class="card ${g.answered?"green":(g.prio<=1?"red":"yellow")}"><div class="meta"><span class="pill" style="color:${d.hex||"inherit"}">${esc(d.name||"عام")}</span>${g.answered?`<span class="pill green">اتجاوب</span>`:`<span class="pill ${g.prio<=1?"red":"yellow"}">${g.prio<=1?"أولوية قصوى":"مهم"}</span>`}</div><b style="margin-top:6px">${esc(g.q)}</b>${g.why?`<p>${esc(g.why)}</p>`:""}${g.note?`<p class="gnote"><b>اللي لقيته في المستندات:</b> ${esc(g.note)}</p>`:""}${g.answered?`<p>الإجابة: ${esc(g.answer||"")}</p>`:`<div class="row mt"><button class="btn sm gold" data-gap="${g.id}">جاوب لريّان</button></div>`}</div>`;}).join("")||`<div class="empty">مفيش أسئلة ناقصة</div>`);return;}
   const types=["all",...Object.keys(KB_TYPES).filter(t=>S.kb.some(k=>k.type===t))];
   $("#kbtypes").innerHTML=types.map(t=>`<button class="chip" data-kbt="${t}" aria-pressed="${S.kbType===t}">${t==="all"?"الكل":KB_TYPES[t]}</button>`).join("");
   const q=S.kbQ.trim();const L=S.kb.filter(k=>(S.kbType==="all"||k.type===S.kbType)&&(!q||(k.title+" "+k.summary+" "+(k.figures||"")).includes(q))).sort((a,b)=>String(b.updated||"").localeCompare(String(a.updated||"")));
