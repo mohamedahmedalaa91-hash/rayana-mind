@@ -1121,11 +1121,35 @@ function drawDownloads(){const el=$("#dcfg");if(!el)return;
   <label class="note" for="sa-model">النموذج</label><select id="sa-model" class="field">${["claude-sonnet-5-5","claude-opus-5-5","claude-haiku-5-5"].map(m=>`<option ${store.get("m","claude-sonnet-5-5")===m?"selected":""}>${m}</option>`).join("")}</select>
   <div class="row"><button class="btn gold" id="sa-save">احفظ وشغّل ريّان</button><button class="btn" id="sa-clear">امسح المفتاح</button></div>
   <div class="card"><b>البيانات</b><p>بيانات النسخة دي على الجهاز ده بس. استورد ملف التصدير من الغرفة على claude.ai، وصدّر نسخة احتياطية كل فترة.</p></div>
+  <div class="card holo"><b>تفريغ صوتيات واتساب</b><p>اختار فولدر الصوتيات اللي جهّزه ريّان في Downloads/RAYANA-DATA/voice، وهو هيفرّغها بمفتاح ElevenLabs بتاعك. الشغل بيكمّل من مكان ما وقف لو قفلت الصفحة. لما يخلص دوس «حمّل التفريغ» واحفظ الملف في نفس الفولدر.</p></div>
+  <div class="row"><label class="btn gold" for="tr-dir">اختار فولدر الصوتيات</label><input id="tr-dir" type="file" webkitdirectory multiple hidden><button class="btn" id="tr-stop">وقّف</button><button class="btn" id="tr-dl">حمّل التفريغ</button><span class="note" id="tr-st"></span></div>
   <div class="row"><label class="btn" for="sa-imp">استورد ملف بيانات</label><input id="sa-imp" type="file" accept=".json,application/json" hidden><button class="btn" id="sa-exp">صدّر نسخة احتياطية</button><span class="note" id="sa-st"></span></div>`;
  $("#sa-save").onclick=()=>{const v=$("#sa-key").value.trim();if(v)store.set("k",v);store.set("m",$("#sa-model").value);location.reload();};
  $("#sa-clear").onclick=()=>{store.set("k","");location.reload();};
  $("#sa-exp").onclick=e=>saveExport(e.currentTarget);
+ $("#tr-st").textContent=Object.keys(TR.done).length?("متفرّغ لحد دلوقتي: "+Object.keys(TR.done).length):"";
+ $("#tr-dir").onchange=e=>trRun(e.target.files,$("#tr-st"));
+ $("#tr-stop").onclick=()=>{TR.run=false;};
+ $("#tr-dl").onclick=trSave;
  $("#sa-imp").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(!j.collections)throw 0;window.RM_IMPORT(j.collections);$("#sa-st").textContent="اتستوردت";}catch(_){$("#sa-st").textContent="الملف مش ملف بيانات الغرفة";}};}
+const TR={done:{},run:false};try{TR.done=JSON.parse(localStorage.getItem("rm-tr")||"{}")||{};}catch(_){}
+function trKeep(){try{localStorage.setItem("rm-tr",JSON.stringify(TR.done));}catch(_){}}
+async function trRun(files,st){
+ if(!EL.key()){st.textContent="حط مفتاح ElevenLabs الأول من «الإعدادات والتكاملات».";return;}
+ if(TR.run)return;
+ const L=[...files].filter(f=>/\.(opus|ogg|m4a|mp3|aac|wav|amr)$/i.test(f.name)&&TR.done[f.name]===undefined);
+ if(!L.length){st.textContent="مفيش صوتيات جديدة في الفولدر ده. اللي متفرّغ: "+Object.keys(TR.done).length;return;}
+ TR.run=true;let i=0,ok=0,fail=0,stopMsg="";
+ const show=()=>{st.textContent=`اتفرّغ ${ok} من ${L.length}${fail?` · اتأجل ${fail}`:""}${stopMsg?" · "+stopMsg:""}`;};show();
+ const worker=async()=>{while(TR.run&&i<L.length){const f=L[i++];const ext=(f.name.split(".").pop()||"ogg").toLowerCase();
+   const r=await sttEL(f,ext==="opus"?"ogg":ext);
+   if(r.err){fail++;if(/مفتاح|رصيد|صلاحية|قفل|مالوش/.test(r.err)){TR.run=false;stopMsg="وقف: "+r.err;}}
+   else{TR.done[f.name]=r.text||"";ok++;if(ok%10===0)trKeep();}
+   show();}};
+ await Promise.all([worker(),worker(),worker()]);trKeep();
+ if(!stopMsg)stopMsg=TR.run?"خلص":"اتوقف";TR.run=false;show();}
+function trSave(){const n=Object.keys(TR.done).length;if(!n)return;const b=new Blob([JSON.stringify({made:new Date().toISOString(),count:n,transcripts:TR.done})],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="rayana-voice-transcripts.json";document.body.appendChild(a);a.click();a.remove();}
 views.config={mount(el){el.innerHTML=header("SETTINGS & INTEGRATIONS","الإعدادات والتكاملات","كل تكامل مكتوب حالته الحقيقية")+`<div class="grid2"><section class="panel"><div class="panel-h"><h2>صوت ريّان</h2></div><div class="panel-b list" id="vcfg"></div></section><section class="panel"><div class="panel-h"><h2>التكاملات</h2></div><div class="panel-b list" id="icfg"></div></section></div><section class="panel" style="margin-top:16px"><div class="panel-h"><h2>التحميل والنسخة المستقلة</h2></div><div class="panel-b list" id="dcfg"></div></section>`;},
  update(){const v=pickVoice();
   $("#vcfg").innerHTML=`<div class="card ${EL.key()?"green":"holo"}"><b>صوت ريّان المصري: ممدوح (ElevenLabs)</b><p>${EL.key()?"شغال على الجهاز ده. ريّان بينطق بصوت ممدوح وحركة الشفايف ماشية مع توقيت كل حرف.":"حط مفتاح ElevenLabs API بتاعك (من elevenlabs.io ← Developers ← API Keys) والصوت المصري يشتغل فورًا. المفتاح بيتحفظ على الجهاز ده بس."} الاستهلاك بيتحسب من رصيد ElevenLabs.</p>${EL.err?`<p style="color:var(--crit);margin:4px 0 0">${esc(EL.err)}</p>`:""}</div>
